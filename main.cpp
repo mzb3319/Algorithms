@@ -1,57 +1,130 @@
-/*
- * 随机排列一个数组
- * 输入：n个数字的序列
- * 输出：输出随机排列后的数组
- *
- * 方法1:创建一个优先级数组，此优先级数组中的数字随机生成，然后根据此优先级数组对原数组进行排序
- * 方法2:讲原数组中的每一个数字与随机位置的数字进行交换，此方法是原址的，选这个吧
- *
- */
-
 #include <iostream>
 #include <vector>
-#include <random>
-#include <unordered_map>
-#include <cassert>
 
 using namespace std;
 
-
-void random_sort(vector<int> &arr)
+inline int LEFT(int i)
 {
-    for(int i=0;i<arr.size();i++)
+    return (i<<1)+1;
+}
+inline int RIGHT(int i)
+{
+    return (i+1)<<1;
+}
+inline int PARENT(int i)
+{
+    return (i-1)>>1;
+}
+
+void swap(vector<int> &arr,int a,int b)
+{
+    int tmp=arr[a];
+    arr[a]=arr[b];
+    arr[b]=tmp;
+}
+
+//维护堆的性质
+void max_heapify(vector<int> &arr,int i)
+{
+    int l=LEFT(i);
+    int r=RIGHT(i);
+
+    int max=i;
+    if(l<arr.size()&&arr[l]>arr[i])
+        max=l;
+    if(r<arr.size()&&arr[r]>arr[max])
+        max=r;
+    if(max!=i)
     {
-        int r=random()%arr.size();
-        int tmp=arr[i];
-        arr[i]=arr[r];
-        arr[r]=tmp;
+        swap(arr,i,max);
+        max_heapify(arr,max);
     }
 }
 
-bool check(vector<int> &arr)
+//创建堆
+void build_max_heap(vector<int> &arr)
 {
-    unordered_map<int,int> table;
-    for(int n:arr)
+    int len=arr.size();
+    for(int i=(len>>1)-1;i>=0;i--)
     {
-        table[n]++;
+        max_heapify(arr,i);
     }
-    random_sort(arr);
-    for(int n:arr)
+}
+
+//堆排序算法，通过缩小堆的大小构建排序算法
+vector<int> heap_sort(vector<int> &arr)
+{
+    build_max_heap(arr);
+    vector<int> ret;
+    for(int i=arr.size()-1;i>=0;--i)
     {
-        table[n]--;
+        swap(arr,i,0);
+        ret.push_back(arr[i]);
+        arr.pop_back();
+        max_heapify(arr,0);
     }
-    for(auto i:table)
+    return ret;
+}
+
+//优先队列
+//返回队列中的最大值
+int heap_maximum(vector<int> &arr)
+{
+    return arr.front();
+}
+//删除最大元素并返回该值
+int heap_extract_max(vector<int> &arr)
+{
+    int ret=arr.front();
+    arr.front()=arr.back();
+    arr.pop_back();
+    max_heapify(arr,0);
+    return ret;
+}
+//提升关键字 i 的数值到 k
+void heap_increase_key(vector<int> &arr,int i,int k)
+{
+    if(arr[i]>=k)
+        return;
+    arr[i]=k;
+    while(i>0&&arr[PARENT(i)]<arr[i])
     {
-        if(i.second!=0)
-            return false;
+        swap(arr,i,PARENT(i));
+        i=PARENT(i);
     }
-    return true;
+}
+//插入一个新节点到堆中
+void max_heap_insert(vector<int> &arr,int key)
+{
+    arr.push_back(INT32_MIN);
+    int i=arr.size()-1;
+    heap_increase_key(arr,i,key);
 }
 
 int main()
 {
-    vector<int> arr{13,-3,-25,20,-3,-16,-23,18,20,-7,12,-5,-22,15,-4,7};
-    assert(check(arr));
-
-    return 0;
+    vector<int> arr{1,2,3,4,5,6,7};
+    build_max_heap(arr);
+    cout<<"build heap:"<<endl;
+    for(int n:arr)
+        cout<<n<<' ';
+    cout<<endl<<"heap sort:"<<endl;
+    arr=heap_sort(arr);
+    for(int n:arr)
+        cout<<n<<' ';
+    cout<<endl<<"返回最大值:";
+    build_max_heap(arr);
+    cout<<heap_maximum(arr);
+    cout<<endl<<"返回最大值并从堆中删除最大值:";
+    cout<<heap_extract_max(arr)<<endl;
+    for(int n:arr)
+        cout<<n<<' ';
+    cout<<endl<<"插入一个新值到堆中:";
+    max_heap_insert(arr,99);
+    for(int n:arr)
+        cout<<n<<' ';
+    cout<<endl<<"heap sort:"<<endl;
+    arr=heap_sort(arr);
+    for(int n:arr)
+        cout<<n<<' ';
 }
