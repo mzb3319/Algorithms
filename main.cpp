@@ -1,63 +1,87 @@
 /*
- * 基数排序
- * 方法：把数字从最低位开始按位排序，基数排序需要基于一种稳定的排序方法
+ * 求最大值最小值；通过快排完成选择问题
  */
 #include "iostream"
 #include "vector"
 
 using namespace std;
 
-void counting_sort(vector<string> &arr,int k,int index)
+struct mm
 {
-    //计数数组
-    vector<int> count(k+1,0);
-    //存放排序后的数组
-    vector<string> tmpArr(arr.size());
-    //计数
-    for(const string &str:arr)
+    int max;
+    int min;
+};
+mm max_min(vector<int> &arr)
+{
+    int index=arr.size();
+    if(!index)
+        return {};
+    if(index==1)
+        return {arr.front(),arr.front()};
+    mm ret;
+    if(index&1)
     {
-        char c='0';
-        if(index<str.size())
-            c=str[str.size()-index-1];
-        count[c-'0']++;
+        ret.max=ret.min=arr[0];
+        index=2;
     }
-    //累加
-    for(int i=1;i<count.size();++i)
-        count[i]+=count[i-1];
-    //对数组进行排序,需要注意的是数组索引从0开始，这里每个元素的计数至少是 1
-    for(int i=arr.size()-1;i>=0;--i)
+    else
     {
-        char c='0';
-        if(index<arr[i].size())
-            c=arr[i][arr[i].size()-index-1];
-        tmpArr[count[c-'0']-1]=arr[i];
-        count[c-'0']--;
+        arr[0]>arr[1]?ret.max=arr[0],ret.min=arr[1]:ret.max=arr[1],ret.min=arr[0];
+        index=3;
     }
-    for(int i=0;i<arr.size();++i)
-        arr[i]=tmpArr[i];
+    for(;index<arr.size();index+=2)
+    {
+        int max,min;
+        arr[index]>arr[index-1]?max=arr[index],min=arr[index-1]:max=arr[index-1],min=arr[index];
+        if(ret.max<max)
+            ret.max=max;
+        if(ret.min>min)
+            ret.min=min;
+    }
+    return ret;
 }
 
-void radix_sort(vector<string> &arr)
+void swap(vector<int> &arr,int a,int b)
 {
-    int index=0;
-    for(const string &str:arr)
-        if(str.size()>index)
-            index=str.size();
-    for(int i=0;i<index;++i)
-        counting_sort(arr,9,i);
+    int tmp=arr[a];
+    arr[a]=arr[b];
+    arr[b]=tmp;
 }
 
+int partition(vector<int> &arr,int beg,int end)
+{
+    if(beg>end)
+        return beg==end?beg:-1;
+    int ri=beg+rand()%(end-beg+1);
+    swap(arr,ri,end);
+    int r=beg-1;
+    for(int i=beg;i<=end;++i)
+    {
+        if(arr[i]<=arr[end])
+            swap(arr,i,++r);
+    }
+    return r;
+}
+
+bool select(vector<int> &arr,int beg,int end,int k)
+{
+    if(beg>end)
+        return false;
+    int r=partition(arr,beg,end);
+    if(r==-1)
+        return false;
+    if(arr[r]>k)
+        return select(arr,beg,r-1,k);
+    else if(arr[r]<k)
+        return select(arr,r+1,end,k);
+    return true;
+}
 int main()
 {
-    vector<string> arr{"1001","378","576","344","987"};
-    cout<<"arr:"<<endl;
-    for(auto &str:arr)
-        cout<<str<<' ';
-    cout<<endl<<"sorted arr:"<<endl;
-    radix_sort(arr);
-    for(auto &str:arr)
-        cout<<str<<' ';
-    cout<<endl;
-
+    vector<int> arr{1,2,6,5,-1,4,-7,2,44,1,99};
+    auto r=max_min(arr);
+    cout<<r.max<<" "<<r.min<<endl;
+    vector<int> find{7,6,5,4,3,2,1};
+    cout<<select(find,0,find.size()-1,7)<<endl;
     return 0;
 }
