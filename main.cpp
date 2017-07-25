@@ -1,7 +1,5 @@
 /*
- * 矩阵链乘法问题
- * 矩阵相乘过程中，适当调整计算顺序（通过括号化实现）可以大大降低计算量
- * 此算法中的矩阵通过数组表示，如{1,2,3,4,5}表示矩阵A1,A2,A3,A4,其中数组的维度以此为1X2,2X3,3X4,4X5
+ * 最长公共子串
  *
  */
 #include "iostream"
@@ -12,49 +10,74 @@
 
 using namespace std;
 
-int matrix_chain_order(vector<int> &matrix,vector<vector<int>> &s)
+int lcs_length(string &a,string &b,vector<vector<int>> &map)
 {
-    int n=matrix.size();
-    vector<vector<int>> table(n-1,vector<int>(n-1,0));
-    for(int i=2;i<=n;++i)//i->矩阵链的长度，比如矩阵链总长度为10，我们先将矩阵两两计算，再三个三个计算，依次类推
+    if(a.empty()||b.empty())
+        return 0;
+    //建表
+    vector<vector<int>> table(a.length()+1,vector<int>(b.length()+1,0));
+    for(int i=0;i<a.length();++i)
     {
-        for(int j=0;j<n-i;++j)//当矩阵链长度为i时，从第一个矩阵开始，依次计算长度为i的矩阵链的最小计算量
+        for(int j=0;j<b.length();++j)
         {
-            int curr=INT32_MAX;
-            int k=j;
-            for(;k<j+i-1;++k)//当矩阵链长度为i时，第k个矩阵处加括号,k取值从当前矩阵链的第一个到倒数第二个，如(A)(BCD),或(ABC)(D)
+            if(a[i]==b[j])//相等用左上角的值加1
             {
-                //确定k后，计算当前矩阵链的计算量，计算量是k前后两个子矩阵链的计算量加上两个子链计算完后得到的两个数组相乘的计算量
-                int tmp=table[j][k]+table[k+1][j+i-1]+matrix[j]*matrix[k+1]*matrix[j+i];
-                if(tmp<curr)
-                {
-                    curr=tmp;
-                    s[j][j+i-1]=k;
-                }
+                table[i+1][j+1]=table[i][j]+1;
+                map[i][j]=0;
             }
-            table[j][j+i-1]=curr;
+                //否则用左边和上边较大的值
+            else if(table[i+1][j]>=table[i][j+1])
+            {
+                table[i+1][j+1]=table[i+1][j];
+                map[i][j]=-1;
+            }
+            else
+            {
+                table[i+1][j+1]=table[i][j+1];
+                map[i][j]=1;
+            }
         }
     }
-    return table[0].back();
+    return table.back().back();
 }
-void print_optimal_parens(vector<vector<int>> &s,int i,int j)
+
+void lcs_print(string &a,vector<vector<int>> &map)
 {
-    if(i==j)
-        cout<<"A"<<i+1;
-    else
+    if(map.empty()||map.front().empty())
+        return;
+    vector<char> print;
+
+    //从右下角开始，如果值为0，则相等，接着向左上方移动
+    //如果等于-1，向左边移动，如果等于1，向上移动
+    int i=map.size()-1,j=map.front().size()-1;
+    while(i>=0&&j>=0)
     {
-        cout<<'(';
-        print_optimal_parens(s,i,s[i][j]);
-        print_optimal_parens(s,s[i][j]+1,j);
-        cout<<')';
+        if(map[i][j]==0)
+        {
+            print.push_back(a[i]);
+            --i;
+            --j;
+        }
+        else if(map[i][j]==-1)
+        {
+            --j;
+        }
+        else
+        {
+            --i;
+        }
     }
+    for(auto beg=print.rbegin();beg!=print.rend();++beg)
+        cout<<*beg<<' ';
+    cout<<endl;
 }
 
 int main()
 {
-    vector<int> matrix{30,35,15,5,10,20,25};
-    vector<vector<int>> s(matrix.size()-1,vector<int>(matrix.size()-1,0));
-    cout<<matrix_chain_order(matrix,s)<<endl;
-    print_optimal_parens(s,0,matrix.size()-2);
+    string a="ABCBDAB";
+    string b="BDCABA";
+    vector<vector<int>> map(a.length(),vector<int>(b.length(),0));
+    cout<<lcs_length(a,b,map)<<endl;
+    lcs_print(a,map);
     return 0;
 }
