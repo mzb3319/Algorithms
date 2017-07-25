@@ -1,5 +1,6 @@
 /*
- * 最长公共子串
+ * 贪心算法解决活动排列问题
+ * 活动有开始时间和结束时间，要求在从所有活动中选出一组活动，这一组活动可以互不干扰的进行，并且这一组活动中包含的活动数量最多
  *
  */
 #include "iostream"
@@ -10,74 +11,32 @@
 
 using namespace std;
 
-int lcs_length(string &a,string &b,vector<vector<int>> &map)
+vector<string> greedy_activity_selector(vector<pair<string,pair<int,int>>> &activities)
 {
-    if(a.empty()||b.empty())
-        return 0;
-    //建表
-    vector<vector<int>> table(a.length()+1,vector<int>(b.length()+1,0));
-    for(int i=0;i<a.length();++i)
+    //先按活动结束时间排序
+    sort(activities.begin(),activities.end(),[](const pair<string,pair<int,int>> &a,const pair<string,pair<int,int>> &b){return a.second.second<b.second.second;});
+    vector<string> ret{activities.front().first};
+    int end=activities.front().second.second;
+    //挑选最先结束的活动加入到解中
+    for(int i=1;i<activities.size();++i)
     {
-        for(int j=0;j<b.length();++j)
+        if(activities[i].second.first>=end)
         {
-            if(a[i]==b[j])//相等用左上角的值加1
-            {
-                table[i+1][j+1]=table[i][j]+1;
-                map[i][j]=0;
-            }
-                //否则用左边和上边较大的值
-            else if(table[i+1][j]>=table[i][j+1])
-            {
-                table[i+1][j+1]=table[i+1][j];
-                map[i][j]=-1;
-            }
-            else
-            {
-                table[i+1][j+1]=table[i][j+1];
-                map[i][j]=1;
-            }
+            end=activities[i].second.second;
+            ret.push_back(activities[i].first);
         }
     }
-    return table.back().back();
-}
-
-void lcs_print(string &a,vector<vector<int>> &map)
-{
-    if(map.empty()||map.front().empty())
-        return;
-    vector<char> print;
-
-    //从右下角开始，如果值为0，则相等，接着向左上方移动
-    //如果等于-1，向左边移动，如果等于1，向上移动
-    int i=map.size()-1,j=map.front().size()-1;
-    while(i>=0&&j>=0)
-    {
-        if(map[i][j]==0)
-        {
-            print.push_back(a[i]);
-            --i;
-            --j;
-        }
-        else if(map[i][j]==-1)
-        {
-            --j;
-        }
-        else
-        {
-            --i;
-        }
-    }
-    for(auto beg=print.rbegin();beg!=print.rend();++beg)
-        cout<<*beg<<' ';
-    cout<<endl;
-}
+    return ret;
+};
 
 int main()
 {
-    string a="ABCBDAB";
-    string b="BDCABA";
-    vector<vector<int>> map(a.length(),vector<int>(b.length(),0));
-    cout<<lcs_length(a,b,map)<<endl;
-    lcs_print(a,map);
+    vector<pair<string,pair<int,int>>> activities{
+            {"a1",{1,4}},{"a2",{3,5}},{"a3",{0,6}},{"a4",{5,7}},{"a5",{3,9}},{"a6",{5,9}},{"a7",{6,10}},{"a8",{8,11}},{"a9",{8,12}},{"a10",{2,14}},{"a11",{12,16}}
+    };
+    vector<string> out=greedy_activity_selector(activities);
+    for(const auto &str:out)
+        cout<<str<<' ';
+    cout<<endl;
     return 0;
 }
