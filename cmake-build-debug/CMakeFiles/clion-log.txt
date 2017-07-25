@@ -1,4 +1,4 @@
-/home/m/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/171.4694.31/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/m/Documents/CLionProjects/Algorithms
+/home/m/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/172.3317.49/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/m/Documents/CLionProjects/Algorithms
 -- The C compiler identification is GNU 6.3.0
 -- The CXX compiler identification is GNU 6.3.0
 -- Check for working C compiler: /usr/bin/cc

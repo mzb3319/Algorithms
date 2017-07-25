@@ -1,8 +1,8 @@
 /*
- * 钢条切割问题
- * 包含自顶向下和自底向上方法
- * 自顶向下方法带备忘，每次求出一个具体的解后就存起来，后边在遇到相同的问题直接查表
- * 自底向上方法需要找到填表的规律，基本分析思路是每次从钢条左边切下一段，这一段的长度是 j，j<给定价格中的最大长度 && j<当前迭代求解的钢条总长度
+ * 矩阵链乘法问题
+ * 矩阵相乘过程中，适当调整计算顺序（通过括号化实现）可以大大降低计算量
+ * 此算法中的矩阵通过数组表示，如{1,2,3,4,5}表示矩阵A1,A2,A3,A4,其中数组的维度以此为1X2,2X3,3X4,4X5
+ *
  */
 #include "iostream"
 #include "vector"
@@ -12,41 +12,49 @@
 
 using namespace std;
 
-int mem_cut_rod(vector<int> &price,int n,unordered_map<int,int> &table)
+int matrix_chain_order(vector<int> &matrix,vector<vector<int>> &s)
 {
-    if(n<=0)
-        return 0;
-    auto f=table.find(n);
-    if(f!=table.end())
-        return f->second;
-    int ret=0;
-    for(int i=1;i<=price.size()&&i<=n;i++)
+    int n=matrix.size();
+    vector<vector<int>> table(n-1,vector<int>(n-1,0));
+    for(int i=2;i<=n;++i)//i->矩阵链的长度，比如矩阵链总长度为10，我们先将矩阵两两计算，再三个三个计算，依次类推
     {
-        ret=max(price[i-1]+mem_cut_rod(price,n-i,table),ret);
-    }
-    return ret;
-}
-int bottom_up_cut_rod(vector<int> &price,int n)
-{
-    vector<int> table{0};
-    for(int i=1;i<=n;i++)
-    {
-        table.push_back(0);
-        int ret=INT32_MIN;
-        for(int j=1;j<=price.size()&&j<=i;++j)
+        for(int j=0;j<n-i;++j)//当矩阵链长度为i时，从第一个矩阵开始，依次计算长度为i的矩阵链的最小计算量
         {
-            ret=max(ret,price[j-1]+table[i-j]);
+            int curr=INT32_MAX;
+            int k=j;
+            for(;k<j+i-1;++k)//当矩阵链长度为i时，第k个矩阵处加括号,k取值从当前矩阵链的第一个到倒数第二个，如(A)(BCD),或(ABC)(D)
+            {
+                //确定k后，计算当前矩阵链的计算量，计算量是k前后两个子矩阵链的计算量加上两个子链计算完后得到的两个数组相乘的计算量
+                int tmp=table[j][k]+table[k+1][j+i-1]+matrix[j]*matrix[k+1]*matrix[j+i];
+                if(tmp<curr)
+                {
+                    curr=tmp;
+                    s[j][j+i-1]=k;
+                }
+            }
+            table[j][j+i-1]=curr;
         }
-        table.back()=ret;
     }
-    return table.back();
+    return table[0].back();
+}
+void print_optimal_parens(vector<vector<int>> &s,int i,int j)
+{
+    if(i==j)
+        cout<<"A"<<i+1;
+    else
+    {
+        cout<<'(';
+        print_optimal_parens(s,i,s[i][j]);
+        print_optimal_parens(s,s[i][j]+1,j);
+        cout<<')';
+    }
 }
 
 int main()
 {
-    vector<int> price{1,5,8,9,10,17,17,20,24,30};
-    unordered_map<int,int> table;
-    cout<<mem_cut_rod(price,12,table)<<endl;
-    cout<<bottom_up_cut_rod(price,12)<<endl;
+    vector<int> matrix{30,35,15,5,10,20,25};
+    vector<vector<int>> s(matrix.size()-1,vector<int>(matrix.size()-1,0));
+    cout<<matrix_chain_order(matrix,s)<<endl;
+    print_optimal_parens(s,0,matrix.size()-2);
     return 0;
 }
