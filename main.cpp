@@ -8,129 +8,101 @@
 #include "algorithm"
 #include "deque"
 #include "unordered_map"
+#include "unordered_set"
 #include "map"
 #include "bitset"
 #include "queue"
 
 using namespace std;
 
-//用来辅助编码,构建编码树
-struct node
+struct Node
 {
-    node()= default;
-    node(char a):c(a),left(NULL),right(NULL){}
-    node *left;
-    node *right;
-    char c;
+    Node(int v):val(v),p(NULL),color(false),d(INT32_MAX){}
+    int val;
+    Node *p;
+    bool color;
+    int d;
 };
 
-//用来创建优先队列
-class l
+void BFS(Node* node,unordered_map<Node*,unordered_set<Node*>> &m)
 {
-public:
-    bool operator()(pair<int,node*> &a,pair<int,node*> &b)
-    {
-        return a.first>b.first;
-    }
-};
+    if(node==NULL)
+        return;
+    deque<Node*> q{node};
+    node->color=true;
+    node->d=0;
 
-//获取编码树
-node* getCode(string &str)
-{
-    unordered_map<char,int> table;
-    //统计字符出现次数
-    for(char c:str)
-        table[c]++;
-    //创建优先队列
-    priority_queue<pair<int,node*>,vector<pair<int,node*>>,l> pq;
-    for(const auto &it:table)
+    int d=0;
+    while(!q.empty())
     {
-        node *tmp=new node(it.first);
-        pq.push({it.second,tmp});
-    }
-    //每次从队列中取出前两个对象，将这两个对象合并成一个子树，然后把子树的跟节点添加到队列中，排序的key是子树子节点的统计和
-    while(pq.size()>1)
-    {
-        pair<int,node*> a=pq.top();
-        pq.pop();
-        pair<int,node*> b=pq.top();
-        pq.pop();
-        node *tmp=new node;
-        tmp->left=a.second;
-        tmp->right=b.second;
-        pq.push({a.first+b.first,tmp});
-    }
-    //当队列中只剩下一个节点时，形成一棵完整的编码树
-    return pq.top().second;
-}
-//辅助编码，先从编码树中找到字符对应的编码
-//相当于遍历树，遍历到达叶节点时就是要找的字符，遍历的路径就是字符对应的编码
-void encode_help(node* head,string &ec,unordered_map<char,string> &table)
-{
-    if(head==NULL)
-        return;
-    //到达叶节点，把字符和对应的编码插入到table中
-    if(head->left==NULL&&head->right==NULL)
-    {
-        table.insert({head->c,ec});
-        return;
-    }
-    //先左子节点
-    ec.push_back('0');
-    encode_help(head->left,ec,table);
-    ec.pop_back();
-    //后右子节点
-    ec.push_back('1');
-    encode_help(head->right,ec,table);
-    ec.pop_back();
-}
-//编码函数,将输入的字符串编码成对应的码串，这里为了方便把码串也用字符串表示了
-string encode(string &str,node* code)
-{
-    unordered_map<char,string> table;
-    string ec;
-    //获取编码树
-    encode_help(code,ec,table);
-    string ret;
-    for(char c:str)
-    {
-        ret+=table[c];
-    }
-    return ret;
-};
-//解码过程,通过每一个字符控制树的遍历过程，0时树向左节点移动，1时树向有节点移动，当到达叶节点时解码出一个字符，将树重新移动到根节点
-string decode(string &str,node *code)
-{
-    string ret;
-    node *curr=code;
-    for(char c:str)
-    {
-        if(c=='0')
-            curr=curr->left;
-        else if(c=='1')
-            curr=curr->right;
-        if(curr->left==NULL&&curr->right==NULL)
+        ++d;
+
+        Node *n=q.front();
+        q.pop_front();
+
+        for(Node *it:m[n])
         {
-            ret+=curr->c;
-            curr=code;
+            //已经探查过的节点直接跳过
+            if(it->color)
+                continue;
+            it->color=true;
+            it->p=n;
+            it->d=d;
+            q.push_back(it);
         }
     }
-    return ret;
+}
+void printBFS(unordered_map<Node*,unordered_set<Node*>> &m,Node *a,Node *b);
+
+//从一个二维数组初始化一个图，二维数组中每一行的第一个元素代表一个节点，后边的元素代表与该节点相连的节点
+void init_BFS(vector<vector<int>> &l)
+{
+    //最终将图保存在m中，可以看成是邻接链表法
+    unordered_map<Node*,unordered_set<Node*>> m;
+
+    //先为每个节点构造一个对象
+    vector<Node*> table;
+    for(int i=0;i<l.size();++i)
+    {
+        Node *tmp=new Node(l[i][0]);
+        table.push_back(tmp);
+    }
+
+    for(int i=0;i<l.size();++i)
+    {
+        for(int j=1;j<l[i].size();++j)
+        {
+            m[table[i]].insert(table[l[i][j]-1]);
+        }
+    }
+    BFS(table[2],m);
+    printBFS(m,table[2],table[4]);
+}
+
+//输出从一个节点a到节点b的最短路径，上边已经为每个节点的p属性赋值，p属性指向BFS树的父节点，所以只要递归的输出
+void printBFS(unordered_map<Node*,unordered_set<Node*>> &m,Node *a,Node *b)
+{
+    if(a==b)
+        cout<<b->val;
+    else if(b->p==NULL)
+        cout<<"no such path"<<endl;
+    else
+    {
+        printBFS(m,a,b->p);
+        cout<<"->"<<b->val;
+    }
 }
 
 int main()
 {
-    string str=string(5,'f')+string(9,'e')+string(12,'c')+string(13,'b')+string(16,'d')+string(45,'a');
-    node* code=getCode(str);
-    string ec=encode(str,code);
-    cout<<ec<<endl;
-    string dc=decode(ec,code);
-    cout<<dc<<endl;
-    unordered_map<char,int> table;
-    for(char c:dc)
-        table[c]++;
-    for(auto &it:table)
-        cout<<it.first<<':'<<it.second<<' ';
-    cout<<endl;
+    /*
+     * 1|->2->5
+     * 2|->1->5->3->4
+     * 3|->2->4
+     * 4|->2->5->3
+     * 5|->4->1->2
+     */
+    vector<vector<int>> l{{1,2,5},{2,1,5,3,4},{3,2,4},{4,2,5,3},{5,4,1,2}};
+    init_BFS(l);
     return 0;
 }
